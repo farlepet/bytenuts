@@ -1,3 +1,8 @@
+#ifdef __FreeBSD__
+/* We need to define this to expose non-POSIX values */
+#  define __BSD_VISIBLE 1
+#endif
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -131,6 +136,8 @@ serial_close(serial_t serial)
 }
 
 #else
+
+
 #  include <termios.h>
 #  include <poll.h>
 
@@ -171,7 +178,6 @@ serial_open(const char *path, long bps)
     ntio.c_cc[VEOF]     = 4;     /* Ctrl-d */
     ntio.c_cc[VTIME]    = 0;     /* inter-character timer unused */
     ntio.c_cc[VMIN]     = 0;     /* non-blocking */
-    ntio.c_cc[VSWTC]    = 0;     /* '\0' */
     ntio.c_cc[VSTART]   = 0;     /* Ctrl-q */
     ntio.c_cc[VSTOP]    = 0;     /* Ctrl-s */
     ntio.c_cc[VSUSP]    = 0;     /* Ctrl-z */
@@ -181,6 +187,10 @@ serial_open(const char *path, long bps)
     ntio.c_cc[VWERASE]  = 0;     /* Ctrl-w */
     ntio.c_cc[VLNEXT]   = 0;     /* Ctrl-v */
     ntio.c_cc[VEOL2]    = 0;     /* '\0' */
+
+#ifdef __linux__
+    ntio.c_cc[VSWTC]    = 0;     /* '\0' */
+#endif
 
     tcflush(fd, TCIFLUSH);
     tcsetattr(fd, TCSANOW, &ntio);
@@ -265,14 +275,10 @@ long_to_speed(long bps)
         return B460800;
     case 500000:
         return B500000;
-    case 576000:
-        return B576000;
     case 921600:
         return B921600;
     case 1000000:
         return B1000000;
-    case 1152000:
-        return B1152000;
     case 1500000:
         return B1500000;
     case 2000000:
@@ -285,6 +291,12 @@ long_to_speed(long bps)
         return B3500000;
     case 4000000:
         return B4000000;
+#ifdef __linux__
+    case 576000:
+        return B576000;
+    case 1152000:
+        return B1152000;
+#endif
     default:
         return B0;
     }
